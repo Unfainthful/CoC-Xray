@@ -50,6 +50,8 @@ CTorch::CTorch(void)
 	m_omni_offset = OMNI_OFFSET;
 	m_torch_inertion_speed_max = TORCH_INERTION_SPEED_MAX;
 	m_torch_inertion_speed_min = TORCH_INERTION_SPEED_MIN;
+
+	m_light_section = "torch_definition";
 }
 
 CTorch::~CTorch() 
@@ -213,7 +215,6 @@ BOOL CTorch::net_Spawn(CSE_Abstract* DC)
 	light_render->set_volumetric_quality(READ_IF_EXISTS(pUserData, r_float, m_light_section, "volumetric_quality", 1.f));
 	light_render->set_volumetric_intensity(READ_IF_EXISTS(pUserData, r_float, m_light_section, "volumetric_intensity", 1.f));
 	light_render->set_volumetric_distance(READ_IF_EXISTS(pUserData, r_float, m_light_section, "volumetric_distance", 1.f));
-
 	light_render->set_type((IRender_Light::LT)(READ_IF_EXISTS(pUserData, r_u8, m_light_section, "type", 2)));
 	light_omni->set_type((IRender_Light::LT)(READ_IF_EXISTS(pUserData, r_u8, m_light_section, "omni_type", 1)));
 
@@ -236,7 +237,6 @@ void CTorch::net_Destroy()
 void CTorch::OnH_A_Chield() 
 {
 	inherited::OnH_A_Chield			();
-	m_focus.set						(Position());
 }
 
 void CTorch::OnH_B_Independent(bool just_before_destroy) 
@@ -282,55 +282,42 @@ void CTorch::UpdateCL()
 				m_prev_hp.y = angle_inertion_var(m_prev_hp.y, -actor->cam_FirstEye()->pitch, m_torch_inertion_speed_min, m_torch_inertion_speed_max, TORCH_INERTION_CLAMP, Device.fTimeDelta);
 			}
 
-			Fvector			dir,right,up;	
-			dir.setHP		(m_prev_hp.x+m_delta_h,m_prev_hp.y);
+			Fvector dir,right,up;	
+			dir.setHP(m_prev_hp.x+m_delta_h,m_prev_hp.y);
 			Fvector::generate_orthonormal_basis_normalized(dir,up,right);
 
+			Fvector offset = M.c; 
+			offset.mad(M.i, m_torch_offset.x);
+			offset.mad(M.j, m_torch_offset.y);
+			offset.mad(M.k, m_torch_offset.z);
+			light_render->set_position	(offset);
 
-			if (true)
-			{
-				Fvector offset				= M.c; 
-				offset.mad(M.i, m_torch_offset.x);
-				offset.mad(M.j, m_torch_offset.y);
-				offset.mad(M.k, m_torch_offset.z);
-				light_render->set_position	(offset);
+			offset = M.c; 
+			offset.mad(M.i,m_omni_offset.x);
+			offset.mad(M.j,m_omni_offset.y);
+			offset.mad(M.k,m_omni_offset.z);
+			light_omni->set_position(offset);
 
-				if(true /*false*/)
-				{
-					offset						= M.c; 
-					offset.mad					(M.i,m_omni_offset.x);
-					offset.mad					(M.j,m_omni_offset.y);
-					offset.mad					(M.k,m_omni_offset.z);
-					light_omni->set_position	(offset);
-				}
-			}//if (true)
-			glow_render->set_position	(M.c);
+			glow_render->set_position(M.c);
 
-			if (true)
-			{
-				light_render->set_rotation	(dir, right);
-				
-				if(true /*false*/)
-				{
-					light_omni->set_rotation	(dir, right);
-				}
-			}//if (true)
-			glow_render->set_direction	(dir);
+			light_render->set_rotation(dir, right);
+			light_omni->set_rotation(dir, right);
+			glow_render->set_direction(dir);
 
 		}// if(actor)
 		else 
 		{
 			if (can_use_dynamic_lights()) 
 			{
-				light_render->set_position	(M.c);
-				light_render->set_rotation	(M.k,M.i);
+				light_render->set_position(M.c);
+				light_render->set_rotation(M.k,M.i);
 
 				Fvector offset				= M.c; 
-				offset.mad					(M.i,OMNI_OFFSET.x);
-				offset.mad					(M.j,OMNI_OFFSET.y);
-				offset.mad					(M.k,OMNI_OFFSET.z);
-				light_omni->set_position	(M.c);
-				light_omni->set_rotation	(M.k,M.i);
+				offset.mad(M.i, m_omni_offset.x);
+				offset.mad(M.j, m_omni_offset.y);
+				offset.mad(M.k, m_omni_offset.z);
+				light_omni->set_position(M.c);
+				light_omni->set_rotation(M.k,M.i);
 			}//if (can_use_dynamic_lights()) 
 
 			glow_render->set_position	(M.c);

@@ -28,7 +28,6 @@ Fvector _wpn_root_pos;
 Fvector m_hud_offset_pos = { 0.f, 0.f, 0.f }; //only in hud adj mode
 Fvector m_hand_offset_pos = { 0.f, 0.f, 0.f };
 
-
 float CalcMotionSpeed(const shared_str& anim_name)
 {
 	return 1.0f;
@@ -197,7 +196,7 @@ void attachable_hud_item::setup_firedeps(firedeps& fd)
 		fire_mat.transform_tiny(fd.vLastFP, m_measures.m_fire_point_offset);
 		m_item_transform.transform_tiny(fd.vLastFP);
 
-		fd.vLastFD.set(0.f, 0.f, 1.f);
+		fd.vLastFD.set(m_measures.m_fire_direction);
 		m_item_transform.transform_dir(fd.vLastFD);
 		VERIFY(_valid(fd.vLastFD));
 		VERIFY(_valid(fd.vLastFD));
@@ -274,6 +273,7 @@ void hud_item_measures::load(const shared_str& sect_name, IKinematics* K)
 		bone_name = pSettings->r_string(sect_name, "fire_bone");
 		m_fire_bone = K->LL_BoneID(bone_name);
 		m_fire_point_offset = pSettings->r_fvector3(sect_name, "fire_point");
+		m_fire_direction = READ_IF_EXISTS(pSettings, r_fvector3, sect_name, "fire_direction", Fvector().set(0.f, 0.f, 1.0f));
 	}
 	else
 		m_fire_point_offset.set(0, 0, 0);

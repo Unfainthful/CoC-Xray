@@ -6,6 +6,8 @@
 #include "inventory.h"
 #include "level.h"
 #include "actor.h"
+#include "script_callback_ex.h"
+#include "script_game_object.h"
 
 CWeaponAutomaticShotgun::CWeaponAutomaticShotgun()
 {
@@ -54,6 +56,10 @@ void CWeaponAutomaticShotgun::OnAnimationEnd(u32 state)
 	if(!m_bTriStateReload || state != eReload)
 		return inherited::OnAnimationEnd(state);
 
+	CActor* A = smart_cast<CActor*>(H_Parent());
+	if (A)
+		A->callback(GameObject::eActorHudAnimationEnd)(smart_cast<CGameObject*>(this)->lua_game_object(),this->hud_sect.c_str(), this->m_current_motion.c_str(), state, this->animation_slot());
+	
 	switch(m_sub_state){
 		case eSubstateReloadBegin:{
 			m_sub_state = eSubstateReloadInProcess;
@@ -201,7 +207,7 @@ u8 CWeaponAutomaticShotgun::AddCartridge		(u8 cnt)
 
 
 	if (m_DefaultCartridge.m_LocalAmmoType != m_ammoType.type1)
-		m_DefaultCartridge.Load(m_ammoTypes[m_ammoType.type1].c_str(), m_ammoType.type1);
+		m_DefaultCartridge.Load(m_ammoTypes[m_ammoType.type1].c_str(), m_ammoType.type1, m_APk);
 	CCartridge l_cartridge = m_DefaultCartridge;
 	while(cnt)
 	{
@@ -249,6 +255,6 @@ void	CWeaponAutomaticShotgun::net_Import	(NET_Packet& P)
 #ifdef DEBUG
 		Msg("! %s reload to %s", *l_cartridge.m_ammoSect, m_ammoTypes[LocalAmmoType].c_str());
 #endif
-		l_cartridge.Load( m_ammoTypes[LocalAmmoType].c_str(), LocalAmmoType );
+		l_cartridge.Load( m_ammoTypes[LocalAmmoType].c_str(), LocalAmmoType, m_APk );
 	}
 }

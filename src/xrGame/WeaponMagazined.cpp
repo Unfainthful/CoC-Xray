@@ -15,7 +15,6 @@
 #include "UIGameCustom.h"
 #include "object_broker.h"
 #include "string_table.h"
-#include "MPPlayersBag.h"
 #include "ui/UIXmlInit.h"
 #include "ui/UIStatic.h"
 #include "game_object_space.h"
@@ -419,7 +418,8 @@ void CWeaponMagazined::ReloadMagazine()
 	VERIFY((u32)m_ammoElapsed.type1 == m_magazine.size());
 
     if (m_DefaultCartridge.m_LocalAmmoType != m_ammoType.type1)
-        m_DefaultCartridge.Load(m_ammoTypes[m_ammoType.type1].c_str(), m_ammoType.type1);
+		m_DefaultCartridge.Load(m_ammoTypes[m_ammoType.type1].c_str(), m_ammoType.type1, m_APk);
+
     CCartridge l_cartridge = m_DefaultCartridge;
 	while (m_ammoElapsed.type1 < iMagazineSize)
     {
@@ -1192,10 +1192,13 @@ void CWeaponMagazined::InitAddons()
 
             scope_tex_name = pSettings->r_string(GetScopeName(), "scope_texture");
             m_zoom_params.m_fScopeZoomFactor = pSettings->r_float(GetScopeName(), "scope_zoom_factor");
+			m_zoom_params.m_fScopeZoomFactorMin = READ_IF_EXISTS(pSettings, r_float, GetScopeName(), "scope_zoom_factor_min", 0.3f);
             m_zoom_params.m_sUseZoomPostprocess = READ_IF_EXISTS(pSettings, r_string, GetScopeName(), "scope_nightvision", 0);
             m_zoom_params.m_bUseDynamicZoom = READ_IF_EXISTS(pSettings, r_bool, GetScopeName(), "scope_dynamic_zoom", FALSE);
             m_zoom_params.m_sUseBinocularVision = READ_IF_EXISTS(pSettings, r_string, GetScopeName(), "scope_alive_detector", 0);
-            m_fRTZoomFactor = m_zoom_params.m_fScopeZoomFactor;
+			float delta, min_zoom_factor;
+			GetZoomData(m_zoom_params.m_fScopeZoomFactor, delta, min_zoom_factor);
+            m_fRTZoomFactor = min_zoom_factor;
             if (m_UIScope)
             {
                 xr_delete(m_UIScope);
@@ -1348,6 +1351,12 @@ void CWeaponMagazined::OnZoomIn()
 
     if (GetState() == eIdle)
         PlayAnimIdle();
+
+#ifdef EXTENDED_WEAPON_CALLBACKS
+	CGameObject	*object = smart_cast<CGameObject*>(H_Parent());
+	if (object)
+		object->callback(GameObject::eOnWeaponZoomIn)(object->lua_game_object(), this->lua_game_object());
+#endif
 
     CActor* pActor = smart_cast<CActor*>(H_Parent());
     if (pActor)

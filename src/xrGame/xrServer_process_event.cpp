@@ -71,16 +71,6 @@ void xrServer::Process_event	(NET_Packet& P, ClientID sender)
 		}break;
 	case GE_RESPAWN:
 		{
-			CSE_Abstract*		E	= receiver;
-			if (E) 
-			{
-				R_ASSERT			(E->s_flags.is(M_SPAWN_OBJECT_PHANTOM));
-
-				svs_respawn			R;
-				R.timestamp			= timestamp	+ E->RespawnTime*1000;
-				R.phantom			= destination;
-				q_respawn.insert	(R);
-			}
 		}
 		break;
 	case GE_TRADE_BUY:
@@ -326,7 +316,7 @@ void xrServer::Process_event	(NET_Packet& P, ClientID sender)
 		}break;
 	case GEG_PLAYER_ITEM_SELL:
 		{
-			game->OnPlayer_Sell_Item(sender, P);
+			//game->OnPlayer_Sell_Item(sender, P);
 		}break;
 	case GE_TELEPORT_OBJECT:
 		{

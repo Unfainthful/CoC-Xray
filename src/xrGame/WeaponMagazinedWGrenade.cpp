@@ -71,8 +71,6 @@ BOOL CWeaponMagazinedWGrenade::net_Spawn(CSE_Abstract* DC)
     CSE_ALifeItemWeapon* const weapon = smart_cast<CSE_ALifeItemWeapon*>(DC);
     R_ASSERT(weapon);
 	
-    inherited::net_Spawn_install_upgrades(weapon->m_upgrades);
-
     BOOL l_res = inherited::net_Spawn(DC);
 
 	if (m_eGrenadeLauncherStatus == ALife::eAddonAttachable)
@@ -812,14 +810,15 @@ void CWeaponMagazinedWGrenade::save(NET_Packet &output_packet)
 {
     inherited::save(output_packet);
     save_data(m_bGrenadeMode, output_packet);
-	save_data(0, output_packet);
+	save_data((u32)0, output_packet);
 }
 
 void CWeaponMagazinedWGrenade::load(IReader &input_packet)
 {
     inherited::load(input_packet);
     load_data(m_bGrenadeMode, input_packet);
-	load_data(0, input_packet);
+	u32 dummy;
+	load_data(dummy, input_packet);
 }
 
 void CWeaponMagazinedWGrenade::net_Export(NET_Packet& P)
@@ -867,7 +866,7 @@ bool CWeaponMagazinedWGrenade::install_upgrade_ammo_class(LPCSTR section, bool t
 {
     LPCSTR str;
 
-	bool result = process_if_exists(section, "ammo_mag_size", &CInifile::r_s32, m_bGrenadeMode?iMagazineSize:iMagazineSize2, test);
+	bool result = process_if_exists(section, "ammo_mag_size", &CInifile::r_s32, m_bGrenadeMode?iMagazineSize2:iMagazineSize, test);
 
     //	ammo_class = ammo_5.45x39_fmj, ammo_5.45x39_ap  // name of the ltx-section of used ammo
     bool result2 = process_if_exists_set(section, "ammo_class", &CInifile::r_string, str, test);
@@ -941,12 +940,6 @@ bool CWeaponMagazinedWGrenade::install_upgrade_impl(LPCSTR section, bool test)
     return result;
 }
 
-void CWeaponMagazinedWGrenade::net_Spawn_install_upgrades(Upgrades_type saved_upgrades)
-{
-    // do not delete this
-    // this is intended behaviour
-}
-
 #include "string_table.h"
 bool CWeaponMagazinedWGrenade::GetBriefInfo(II_BriefInfo& info)
 {
@@ -956,13 +949,13 @@ bool CWeaponMagazinedWGrenade::GetBriefInfo(II_BriefInfo& info)
 
     string32 int_str;
 
-    if (!IsGrenadeLauncherAttached())
+    if (m_bGrenadeMode || !IsGrenadeLauncherAttached())
     {
         info.grenade = "";
         return false;
     }
 
-    int total2 = GetAmmoCount(0);
+    int total2 = GetAmmoCount2(0);
     if (unlimited_ammo())
         xr_sprintf(int_str, "--");
     else
